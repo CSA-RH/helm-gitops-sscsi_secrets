@@ -74,11 +74,11 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
             ```
 
 3.Install Bitnami Sealed Secrets in ARO
-> Bitnami Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.
+Bitnami Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.
 
-> It is important to bear in mind that The kubeseal utility uses asymmetric crypto to encrypt secrets that only the controller can decrypt. Please visit the following [link](https://github.com/bitnami-labs/sealed-secrets/blob/main/docs/developer/crypto.md) for more information about security protocols and cryptographic tools used.
+It is important to bear in mind that The kubeseal utility uses asymmetric crypto to encrypt secrets that only the controller can decrypt. Please visit the following [link](https://github.com/bitnami-labs/sealed-secrets/blob/main/docs/developer/crypto.md) for more information about security protocols and cryptographic tools used.
 
-> In the following process, a Sealed Secrets controller will be installed using a custom certificate that was generated in the respective namespace previously. This installation model is designed for multi-cluster environments where it is required to use the same certificate in multiple Kubernetes clusters in order to facilitate operations and maintainability.
+In the following process, a Sealed Secrets controller will be installed using a custom certificate that was generated in the respective namespace previously. This installation model is designed for multi-cluster environments where it is required to use the same certificate in multiple Kubernetes clusters in order to facilitate operations and maintainability.
 
 - Create Namespace where Sealed Secrets Controller will be deployed
 
@@ -106,8 +106,8 @@ helm install sealed-secrets -n sealedsecrets --set-string secretName=cert-encryp
 ```
 
 For further details refer to:
-https://github.com/bitnami-labs/sealed-secrets#installation
-https://github.com/acidonper/ocp-gitops-argocd-with-sealed-secrets/tree/master
+- https://github.com/bitnami-labs/sealed-secrets#installation
+- https://github.com/acidonper/ocp-gitops-argocd-with-sealed-secrets/tree/master
 
 - Install the command line tool kubeseal
 https://github.com/bitnami-labs/sealed-secrets/releases
@@ -124,7 +124,7 @@ sudo mv kubeseal /usr/local/bin/
 Regarding the steps to configure the final namespace to host the respective *SealedSecret* objects and the respective ArgoCD application that handles the creation of the secret:
 
 ```$bash
-oc apply -f argocd/sealedsecrets/ClusterRole_namespaceauth.yaml
+oc apply -f clusterprimer/sealedsecrets/ClusterRole_namespaceauth.yaml
 ```
 
 # Demo: Developer creates a new application in GitOps:

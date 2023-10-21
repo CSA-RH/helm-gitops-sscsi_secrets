@@ -172,7 +172,6 @@ az keyvault set-policy -n ${KEYVAULT_NAME} \
       --secret-permissions get \
       --spn ${SERVICE_PRINCIPAL_CLIENT_ID}
 
-
 ## Create SealedSecret Object
 This object will contain the encrypted key used in the service principal to allow authorization to the Azure Key Vault.
 
@@ -219,10 +218,13 @@ kubeseal -f sealedsecret_azv.yaml -n ${NAMESPACE} --name ${AZK_SECRET_NAME} \
 
 
 
-- Create namespace
+- Create namespace and add label to allow GitOps to manage the namespace
 
+```$bash
 oc new-project ${NAMESPACE}
 
+oc label namespace ${NAMESPACE} argocd.argoproj.io/managed-by=openshift-gitops
+```
 
 ????- Is this clusterrole really needed?????? 
 Regarding the steps to configure the final namespace to host the respective *SealedSecret* objects and the respective ArgoCD application that handles the creation of the secret, once the Red Hat Openshift GitOps operator is installed, are included in the following procedure:
@@ -249,13 +251,9 @@ rules:
   - watch
 EOF
 
-oc apply -f ClusterRole.yaml -n {$NAMESPACE}
+oc apply -f ClusterRole.yaml -n ${NAMESPACE}
 
-oc adm policy add-role-to-user admin-sealedsecret system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n {$NAMESPACE}
-```
-
-```$bash
-oc label namespace {$NAMESPACE} argocd.argoproj.io/managed-by=openshift-gitops
+oc adm policy add-role-to-user admin-sealedsecret system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n ${NAMESPACE}
 ```
 
 - Before creating the application it is necessary to make a commit and push to the forked repository. 
@@ -267,14 +265,33 @@ git push
 ```
 
 - Deploy the application in GitOps
+#oc apply -f argocd/application.yaml -n openshift-gitops
 
-oc apply -f argocd/application.yaml -n openshift-gitops
+cat <<EOF > application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: $NAMESPACE
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: $NAMESPACE
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    helm:
+      valueFiles:
+      - values.yaml
+    path:  helm/pet-clinic/
+    repoURL: https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
+    targetRevision: HEAD
+EOF
+
+oc apply -f application.yaml
 
 
-#echo "# helm-gitops-sscsi_secrets" >> README.md
-#git init
-#git add README.md
-#git commit -m "first commit"
-#git branch -M main
-#git remote add origin https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
-#git push -u origin main
+# To Delete Application
+
+oc -n openshift-gitops delete Application $NAMESPACE
+
+oc delete project $NAMESPACE

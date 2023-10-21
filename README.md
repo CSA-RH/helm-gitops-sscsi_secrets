@@ -121,10 +121,17 @@ chmod 755 kubeseal
 sudo mv kubeseal /usr/local/bin/
 ```
 
+- This ClusterRole will have to be binded on each namespace using the Sealed Secrets in order to allow access to the bitnami API group to manage the sealed secret.
+Regarding the steps to configure the final namespace to host the respective *SealedSecret* objects and the respective ArgoCD application that handles the creation of the secret:
+
+```$bash
+oc apply -f argocd/sealedsecrets/ClusterRole_namespaceauth.yaml
+```
 
 # Demo: Developer creates a new application in GitOps:
 
 ## Export Enviremont variables in your local laptop
+```$bash
 export KEYVAULT_RESOURCE_GROUP=lmartinh-rgb6
 export KEYVAULT_NAME=lmartinh-vault-1
 export KEYVAULT_LOCATION=eastus
@@ -134,43 +141,53 @@ export KEYVAULT_VALUE=petclinic
 
 #To allow access to Azure Key Vault 
 export AZK_SECRET_NAME=secrets-store-creds
+```
 
 ## Create the Azure Service Principal (SP)
 
 - Create an Azure Keyvault in your Resource Group that contains ARO
 
-
+```$bash
 az keyvault create -n ${KEYVAULT_NAME} \
       -g ${KEYVAULT_RESOURCE_GROUP} \
       --location ${KEYVAULT_LOCATION}
+```
 
 - Create a secret in the Keyvault
 
-
+```$bash
 az keyvault secret set \
       --vault-name ${KEYVAULT_NAME} \
       --name ${SECRET_NAME} --value ${KEYVAULT_VALUE}
-
+```
 
 - Create a Service Principal to access the keyvault
 
+```$bash
 export SERVICE_PRINCIPAL_CLIENT_SECRET="$(az ad sp create-for-rbac \
       --name http://$KEYVAULT_NAME --query 'password' -otsv)"
+```
 
+```$bash
 export SERVICE_PRINCIPAL_CLIENT_ID="$(az ad sp list \
       --display-name http://$KEYVAULT_NAME --query '[0].appId' -otsv)"
+```
 
+```$bash
 echo "SERVICE_PRINCIPAL_CLIENT_SECRET"
 echo $SERVICE_PRINCIPAL_CLIENT_SECRET
 echo "==========="
 echo "SERVICE_PRINCIPAL_CLIENT_ID"
 echo $SERVICE_PRINCIPAL_CLIENT_ID
-
+```
 
 - Set an Access Policy for the Service Principal
+ 
+```$bash
 az keyvault set-policy -n ${KEYVAULT_NAME} \
       --secret-permissions get \
       --spn ${SERVICE_PRINCIPAL_CLIENT_ID}
+```
 
 ## Create SealedSecret Object
 This object will contain the encrypted key used in the service principal to allow authorization to the Azure Key Vault.
@@ -183,6 +200,7 @@ oc create secret generic secrets-store-creds --dry-run=client -o yaml \
       -n $NAMESPACE \
       --from-literal clientid=${SERVICE_PRINCIPAL_CLIENT_ID} \
       --from-literal clientsecret=${SERVICE_PRINCIPAL_CLIENT_SECRET} > sealedsecret_azv.yaml
+```
 
 ???? Add a label to the secret oc -n $NAMESPACE label secret secrets-store-creds --dry-run=client -o yaml \
       secrets-store.csi.k8s.io/used=true
@@ -200,15 +218,16 @@ metadata:
   name: secrets-store-creds
   namespace: deleteme
 type: Opaque
-```
+
 
 - locally create the K8s manifest of the Sealed Secret wich embeds the encryption of the secret to have access to the AZV.
 
+```$bash
 kubeseal -f sealedsecret_azv.yaml -n ${NAMESPACE} --name ${AZK_SECRET_NAME} \
  --controller-namespace=sealedsecrets \
  --controller-name=sealed-secrets \
  --format yaml > helm/pet-clinic/templates/sealed-secret.yaml
-
+```
 
 > **NOTE**
 > controller-namespace: define the namespace where the operator is installed, 
@@ -216,44 +235,36 @@ kubeseal -f sealedsecret_azv.yaml -n ${NAMESPACE} --name ${AZK_SECRET_NAME} \
 ?????> -n: is the namespace of the application consuming the secret  
 
 
-
-
 - Create namespace and add label to allow GitOps to manage the namespace
 
 ```$bash
 oc new-project ${NAMESPACE}
+```
 
+```$bash
 oc label namespace ${NAMESPACE} argocd.argoproj.io/managed-by=openshift-gitops
 ```
 
-????- Is this clusterrole really needed?????? 
-Regarding the steps to configure the final namespace to host the respective *SealedSecret* objects and the respective ArgoCD application that handles the creation of the secret, once the Red Hat Openshift GitOps operator is installed, are included in the following procedure:
+
+- Give authorization to the namespace to call the bitnami API Group 
 
 ```$bash
-cat <<EOF > ClusterRole.yaml
+
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: RoleBinding
 metadata:
   name: admin-sealedsecret
-rules:
-- apiGroups:
-  - bitnami.com
-  resources:
-  - sealedsecrets
-  verbs:
-  - create
-  - delete
-  - deletecollection
-  - get
-  - list
-  - patch
-  - update
-  - watch
-EOF
+  namespace: petclinic3
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin-sealedsecret
+subjects:
+- kind: ServiceAccount
+  name: openshift-gitops-argocd-application-controller
+  namespace: openshift-gitops
 
-oc apply -f argocd/sealedsecrets/ClusterRole_namespaceauth.yaml -n ${NAMESPACE}
-
-oc adm policy add-role-to-user admin-sealedsecret system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n ${NAMESPACE}
+#oc adm policy add-role-to-user admin-sealedsecret system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n ${NAMESPACE}
 ```
 
 - Before creating the application it is necessary to make a commit and push to the forked repository. 

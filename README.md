@@ -111,8 +111,6 @@ https://github.com/acidonper/ocp-gitops-argocd-with-sealed-secrets/tree/master
 - Install the command line tool kubeseal
 https://github.com/bitnami-labs/sealed-secrets/releases
 
-on Linux:
-
 ```$bash
 wget https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.24.2/kubeseal-0.24.2-linux-amd64.tar.gz -O kubeseal.tar.gz 
 tar xzf kubeseal.tar.gz
@@ -131,6 +129,7 @@ oc apply -f argocd/sealedsecrets/ClusterRole_namespaceauth.yaml
 # Demo: Developer creates a new application in GitOps:
 
 ## Export Enviremont variables in your local laptop
+
 ```$bash
 export KEYVAULT_RESOURCE_GROUP=lmartinh-rgb6
 export KEYVAULT_NAME=lmartinh-vault-1
@@ -193,37 +192,32 @@ az keyvault set-policy -n ${KEYVAULT_NAME} \
 This object will contain the encrypted key used in the service principal to allow authorization to the Azure Key Vault.
 
 - Locally create a secret for Kubernetes to use to access the Key Vault and label it.
-#echo -n bar | oc -n ${NAMESPACE_PROJECT} create secret generic ${AKV_SECRET_NAME} --dry-run=client --from-file=foo=/dev/stdin -o yaml > sealedsecret_azv.yaml
+#echo -n bar | oc -n ${NAMESPACE_PROJECT} create secret generic ${AKV_SECRET_NAME} --dry-run=client --from-file=foo=/dev/stdin -o yaml > secret_azv.yaml
+
+#oc create secret generic secrets-store-creds --dry-run=client -o yaml \
+      -n ${NAMESPACE} \
+      --from-literal clientid=${SERVICE_PRINCIPAL_CLIENT_ID} \
+      --from-literal clientsecret=${SERVICE_PRINCIPAL_CLIENT_SECRET} > secret_azv.yaml
 
 ```$bash
-oc create secret generic secrets-store-creds --dry-run=client -o yaml \
-      -n $NAMESPACE \
-      --from-literal clientid=${SERVICE_PRINCIPAL_CLIENT_ID} \
-      --from-literal clientsecret=${SERVICE_PRINCIPAL_CLIENT_SECRET} > sealedsecret_azv.yaml
-```
-
-???? Add a label to the secret oc -n $NAMESPACE label secret secrets-store-creds --dry-run=client -o yaml \
-      secrets-store.csi.k8s.io/used=true
-
-cat sealedsecret_azv.yaml
-
+cat <<EOF > secret_azv.yaml
 apiVersion: v1
 data:
-  clientid: "??????"
-  clientsecret: "?????????"
+  clientid: ${SERVICE_PRINCIPAL_CLIENT_ID}
+  clientsecret: ${SERVICE_PRINCIPAL_CLIENT_SECRET}
 kind: Secret
 metadata:
   labels:
-    secrets-store.csi.k8s.io/used: "true"
+    secrets-store.csi.k8s.io/used: "true"  
   name: secrets-store-creds
-  namespace: deleteme
-type: Opaque
-
+  namespace: ${NAMESPACE}
+EOF
+```
 
 - locally create the K8s manifest of the Sealed Secret wich embeds the encryption of the secret to have access to the AZV.
 
 ```$bash
-kubeseal -f sealedsecret_azv.yaml -n ${NAMESPACE} --name ${AZK_SECRET_NAME} \
+kubeseal -f secret_azv.yaml -n ${NAMESPACE} --name ${AZK_SECRET_NAME} \
  --controller-namespace=sealedsecrets \
  --controller-name=sealed-secrets \
  --format yaml > helm/pet-clinic/templates/sealed-secret.yaml
@@ -232,8 +226,6 @@ kubeseal -f sealedsecret_azv.yaml -n ${NAMESPACE} --name ${AZK_SECRET_NAME} \
 > **NOTE**
 > controller-namespace: define the namespace where the operator is installed, 
 > controller-name: is a combination of the SealedSecretController object name and the name of the namespace
-?????> -n: is the namespace of the application consuming the secret  
-
 
 - Create namespace and add label to allow GitOps to manage the namespace
 
@@ -245,9 +237,9 @@ oc new-project ${NAMESPACE}
 oc label namespace ${NAMESPACE} argocd.argoproj.io/managed-by=openshift-gitops
 ```
 
-
 - Give authorization to the namespace to call the bitnami API Group 
 
+####Moved to Git#####
 ```$bash
 
 apiVersion: rbac.authorization.k8s.io/v1
@@ -270,15 +262,15 @@ subjects:
 - Before creating the application it is necessary to make a commit and push to the forked repository. 
 
 ```$bash
-git add .
+git add *
 git commit -m "argocd sealed secrets"
 git push
 ```
 
 - Deploy the application in GitOps
-#oc apply -f argocd/application.yaml -n openshift-gitops
+oc apply -f argocd/app/application_petclinic.yaml
 
-cat <<EOF > application.yaml
+
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -296,10 +288,6 @@ spec:
     path:  helm/pet-clinic/
     repoURL: https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
     targetRevision: HEAD
-EOF
-
-oc apply -f application.yaml
-
 
 # To Delete Application
 

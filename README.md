@@ -133,6 +133,10 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
         oc apply -f clusterprimer/ClusterRole_namespaceauth.yaml
         ```
 
+- ?????? due to the SCC
+        oc apply -f clusterprimer/ClusterRole_scc.yaml 
+
+
     For further details refer to: https://github.com/bitnami-labs/sealed-secrets#installation
 
 # Demo: Developer creates a new application in GitOps:

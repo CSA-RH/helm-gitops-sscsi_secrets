@@ -1,0 +1,18 @@
+petclinic:
+  app: spring-petclinic
+  name: spring-petclinic
+  image: quay.io/rdiazgav/spring-petclinic:latest
+  containerPort1: 8080
+  containerPort2: 8443
+  containerPort3: 8778
+service:
+  app: spring-petclinic
+  name: spring-petclinic
+  type: ClusterIP
+secretprovider:
+  secretName: "demosecret4"
+  objectName: "demosecret4"          # Name of the secret created in KeyVault
+  keyvaultName: "lmartinh-vault-1"   # the name of the KeyVault
+  tenantId: "64dc69e4-d083-49fc-9569-ebece1dd1408"                               # the tenant ID of the KeyVault
+crb:
+  namespace: petclinic3

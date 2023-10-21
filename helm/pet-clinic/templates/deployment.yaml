@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+  labels:
+    app: {{ .Values.petclinic.app }}
+    app.kubernetes.io/component: web
+    app.kubernetes.io/instance: spring-petclinic
+    app.kubernetes.io/name: spring-petclinic
+    app.kubernetes.io/part-of: spring-petclinic
+    app.openshift.io/runtime: java
+  name: {{ .Values.petclinic.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.petclinic.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.petclinic.app }}
+    spec:
+      containers:
+      - name: {{ .Values.petclinic.name }}
+        imagePullPolicy: Always
+        image: {{ .Values.petclinic.image }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        ports:
+        - containerPort: {{ .Values.petclinic.containerPort1 }}
+          protocol: TCP
+        - containerPort: {{ .Values.petclinic.containerPort2 }}
+          protocol: TCP
+        - containerPort: {{ .Values.petclinic.containerPort3 }}
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 45
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 5

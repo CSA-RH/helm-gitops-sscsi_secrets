@@ -21,6 +21,14 @@ The objective of this repository is to demonstrate the usage of a Helm chart in 
 - SSCSI will have to be authenticated against the azkv service, for that a service principal will be used. A SP will have a key that must be protected, therefore this repo uses Bitnamy Sealed Secrets to encript the SP key, which will allow the encrypted key to be added to a Git repository.
 - SSCSI by default mounts the retrived azkv secrets retrived as a volume in the pods, nonetheless we have an additional requirement to mount as a K8s secret as well (details bellow). 
 
+# Objects created Manualy
+
+
+# Objects create by GitOps
+
+
+# 
+
 
 # Procedure:
 
@@ -39,6 +47,8 @@ The objective of this repository is to demonstrate the usage of a Helm chart in 
     2. Encrypt the SP key
     3. The encripted SP Key is uploaded to Git
     4. The developer creates a new Application in GitOps feeding the Git link of the application Helm chart  
+
+
 
 ## Detailed Procedure
 
@@ -106,8 +116,6 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
         helm install sealed-secrets -n sealedsecrets --set-string secretName=cert-encryption sealed-secrets/sealed-secrets
         ```
 
-    For further details refer to: https://github.com/bitnami-labs/sealed-secrets#installation
-
     - Install the command line tool kubeseal
         https://github.com/bitnami-labs/sealed-secrets/releases
 
@@ -122,8 +130,10 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
     - To authorize certain calls to the bitnami API Group from the projects. To configure the final namespace to host the respective *SealedSecret* objects and the respective ArgoCD application that handles the creation of the secret:
 
         ```$bash
-        oc apply -f clusterprimer/sealedsecrets/ClusterRole_namespaceauth.yaml
+        oc apply -f clusterprimer/ClusterRole_namespaceauth.yaml
         ```
+
+    For further details refer to: https://github.com/bitnami-labs/sealed-secrets#installation
 
 # Demo: Developer creates a new application in GitOps:
 
@@ -193,11 +203,16 @@ This object will contain the encrypted key used in the service principal to allo
 - Locally create a secret for Kubernetes to use to access the Key Vault and label it.
 
 ```$bash
+SERVICE_PRINCIPAL_CLIENT_ID_B64=`echo -n ${SERVICE_PRINCIPAL_CLIENT_ID} | base64`
+SERVICE_PRINCIPAL_CLIENT_SECRET_B64=`echo -n ${SERVICE_PRINCIPAL_CLIENT_SECRET} | base64`
+```
+
+```$bash
 cat <<EOF > secret_azv.yaml
 apiVersion: v1
 data:
-  clientid: ${SERVICE_PRINCIPAL_CLIENT_ID}
-  clientsecret: ${SERVICE_PRINCIPAL_CLIENT_SECRET}
+  clientid: ${SERVICE_PRINCIPAL_CLIENT_ID_B64}
+  clientsecret: ${SERVICE_PRINCIPAL_CLIENT_SECRET_B64}
 kind: Secret
 metadata:
   labels:

@@ -49,29 +49,29 @@ git clone https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
 https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gitops.html
 
 3. Install SSCSI in ARO
-   1. Install procedure
-  > I have installed using the community version.
+    1. Install procedure
+        - I have installed the community version.
 
-  > Red Hat Experts version
-  > https://cloud.redhat.com/experts/misc/secrets-store-csi/
-  > https://cloud.redhat.com/experts/misc/secrets-store-csi/azure-key-vault/
+        - Red Hat Experts version
+            > https://cloud.redhat.com/experts/misc/secrets-store-csi/
+            > https://cloud.redhat.com/experts/misc/secrets-store-csi/azure-key-vault/
 
-  > Microsoft version
-  > https://learn.microsoft.com/en-us/azure/openshift/howto-use-key-vault-secrets
+        - Microsoft version
+            > https://learn.microsoft.com/en-us/azure/openshift/howto-use-key-vault-secrets
 
     2. The following additional steps are required if the SSCSI have to create an K8s secret:
-       - add cluster role
+        - add cluster role
 
-        ```$bash
-        oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:k8s-secrets-store-csi:secrets-store-csi-driver
-        ```
+            ```$bash
+            oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:k8s-secrets-store-csi:secrets-store-csi-driver
+            ```
 
-       - create custom SCC
-         > This custom SCC is required to create the K8s secret and is allowing the use of the CSI volume. Additionally also set the capability "SETGID" as it is required by the MySQL DDBB Image used.
+        - create custom SCC
+            > This custom SCC is required to create the K8s secret and is allowing the use of the CSI volume. Additionally also set the capability "SETGID" as it is required by the MySQL DDBB Image used.
 
-        ```$bash
-        oc apply -f clusterprimer/scc.yaml
-        ```
+            ```$bash
+            oc apply -f clusterprimer/scc.yaml
+            ```
 
 3.Install Bitnami Sealed Secrets in ARO
 > Bitnami Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.

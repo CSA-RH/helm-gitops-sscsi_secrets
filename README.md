@@ -251,7 +251,7 @@ rules:
   - watch
 EOF
 
-oc apply -f ClusterRole.yaml -n ${NAMESPACE}
+oc apply -f argocd/sealedsecrets/ClusterRole_namespaceauth.yaml -n ${NAMESPACE}
 
 oc adm policy add-role-to-user admin-sealedsecret system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n ${NAMESPACE}
 ```

@@ -280,7 +280,7 @@ git push
 - Deploy the application in GitOps
 
 ```$bash
-cat <<EOF > application_petclinic.yaml
+cat <<EOF | oc apply -f -
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -299,10 +299,6 @@ spec:
     repoURL: https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
     targetRevision: HEAD
 EOF
-```
-
-```$bash
-oc apply -f application_petclinic.yaml
 ```
 
 # To Delete the Application

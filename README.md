@@ -12,7 +12,7 @@ The objective of this repository is to demonstrate the usage of a Helm chart in 
 - Helm
 - SSCSI
 - Azure KeyVault
--K8s
+- K8s
 
 
 # Requirements
@@ -26,58 +26,59 @@ The objective of this repository is to demonstrate the usage of a Helm chart in 
 
 ## Overview Steps
 
-0.Clone the Git repository
+1. Clone the Git repository
 
-1.Install GitOps
+2. Install GitOps
 
-2.Install SSCSI in ARO
+2. Install SSCSI in ARO
 
-3.Install Bitnami Sealed Secrets in ARO
+3. Install Bitnami Sealed Secrets in ARO
 
-4.Exercise: Developer creates a new application in GitOps:
-4.1.Create the Azure Service Principal (SP)
-4.2.Encrypt the SP key
-4.3.The encripted SP Key is uploaded to Git
-4.4.The developer creates a new Application in GitOps feeding the Git link of the application Helm chart  
-
+4. Exercise: Developer creates a new application in GitOps:
+    1. Create the Azure Service Principal (SP)
+    2. Encrypt the SP key
+    3. The encripted SP Key is uploaded to Git
+    4. The developer creates a new Application in GitOps feeding the Git link of the application Helm chart  
 
 ## Detailed Procedure
 
-0.Clone the Git repository into your laptop
+1. Clone the Git repository into your laptop
 git clone https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
 
-1.Install GitOps in your ARO cluster
+2. Install GitOps in your ARO cluster
 https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gitops.html
 
-2.Install SSCSI in ARO
+3. Install SSCSI in ARO
+   1. Install procedure
+  > I have installed using the community version.
 
-2.1.Install procedure
-I have installed using the community version.
-- Red Hat Experts version
-https://cloud.redhat.com/experts/misc/secrets-store-csi/
-https://cloud.redhat.com/experts/misc/secrets-store-csi/azure-key-vault/
+  > Red Hat Experts version
+  > https://cloud.redhat.com/experts/misc/secrets-store-csi/
+  > https://cloud.redhat.com/experts/misc/secrets-store-csi/azure-key-vault/
 
-- Microsoft version
-https://learn.microsoft.com/en-us/azure/openshift/howto-use-key-vault-secrets
+  > Microsoft version
+  > https://learn.microsoft.com/en-us/azure/openshift/howto-use-key-vault-secrets
 
-2.2.The following additional steps are required if the SSCSI have to create an K8s secret:
--add cluster role
-oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:k8s-secrets-store-csi:secrets-store-csi-driver
+    2. The following additional steps are required if the SSCSI have to create an K8s secret:
+       - add cluster role
 
-- create custom SCC
-This custom SCC is required to create the K8s secret and is allowing the use of the CSI volume. Additionally also set the capability "SETGID" as it is required by the MySQL DDBB Image used.
+        ```$bash
+        oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:k8s-secrets-store-csi:secrets-store-csi-driver
+        ```
 
-oc apply -f clusterprimer/scc.yaml
+       - create custom SCC
+         > This custom SCC is required to create the K8s secret and is allowing the use of the CSI volume. Additionally also set the capability "SETGID" as it is required by the MySQL DDBB Image used.
 
+        ```$bash
+        oc apply -f clusterprimer/scc.yaml
+        ```
 
 3.Install Bitnami Sealed Secrets in ARO
+> Bitnami Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.
 
-Bitnami Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.
+> It is important to bear in mind that The kubeseal utility uses asymmetric crypto to encrypt secrets that only the controller can decrypt. Please visit the following [link](https://github.com/bitnami-labs/sealed-secrets/blob/main/docs/developer/crypto.md) for more information about security protocols and cryptographic tools used.
 
-It is important to bear in mind that The kubeseal utility uses asymmetric crypto to encrypt secrets that only the controller can decrypt. Please visit the following [link](https://github.com/bitnami-labs/sealed-secrets/blob/main/docs/developer/crypto.md) for more information about security protocols and cryptographic tools used.
-
-In the following process, a Sealed Secrets controller will be installed using a custom certificate that was generated in the respective namespace previously. This installation model is designed for multi-cluster environments where it is required to use the same certificate in multiple Kubernetes clusters in order to facilitate operations and maintainability.
-
+> In the following process, a Sealed Secrets controller will be installed using a custom certificate that was generated in the respective namespace previously. This installation model is designed for multi-cluster environments where it is required to use the same certificate in multiple Kubernetes clusters in order to facilitate operations and maintainability.
 
 - Create Namespace where Sealed Secrets Controller will be deployed
 
@@ -192,12 +193,6 @@ az keyvault set-policy -n ${KEYVAULT_NAME} \
 This object will contain the encrypted key used in the service principal to allow authorization to the Azure Key Vault.
 
 - Locally create a secret for Kubernetes to use to access the Key Vault and label it.
-#echo -n bar | oc -n ${NAMESPACE_PROJECT} create secret generic ${AKV_SECRET_NAME} --dry-run=client --from-file=foo=/dev/stdin -o yaml > secret_azv.yaml
-
-#oc create secret generic secrets-store-creds --dry-run=client -o yaml \
-      -n ${NAMESPACE} \
-      --from-literal clientid=${SERVICE_PRINCIPAL_CLIENT_ID} \
-      --from-literal clientsecret=${SERVICE_PRINCIPAL_CLIENT_SECRET} > secret_azv.yaml
 
 ```$bash
 cat <<EOF > secret_azv.yaml
@@ -238,10 +233,8 @@ oc label namespace ${NAMESPACE} argocd.argoproj.io/managed-by=openshift-gitops
 ```
 
 - Give authorization to the namespace to call the bitnami API Group 
-
 ####Moved to Git#####
 ```$bash
-
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
@@ -269,6 +262,7 @@ git push
 
 - Deploy the application in GitOps
 
+```$bash
 cat <<EOF > application_petclinic.yaml
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -288,11 +282,18 @@ spec:
     repoURL: https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
     targetRevision: HEAD
 EOF
+```
 
+```$bash
 oc apply -f application_petclinic.yaml
+```
 
-# To Delete Application
+# To Delete the Application
 
+```$bash
 oc -n openshift-gitops delete Application $NAMESPACE
+```
 
+```$bash
 oc delete project $NAMESPACE
+```

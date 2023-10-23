@@ -82,6 +82,12 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
             oc apply -f clusterprimer/scc.yaml
             ```
 
+       - add role
+
+            ```$bash
+            oc apply -f clusterprimer/ClusterRole_scc.yaml 
+            ```
+
 4. Install Bitnami Sealed Secrets in ARO
 
     Bitnami Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.
@@ -132,8 +138,7 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
         oc apply -f clusterprimer/ClusterRole_namespaceauth.yaml
         ```
 
-- ?????? due to the SCC
-        oc apply -f clusterprimer/ClusterRole_scc.yaml 
+
 
 
     For further details refer to: https://github.com/bitnami-labs/sealed-secrets#installation

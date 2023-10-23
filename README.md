@@ -1,7 +1,7 @@
 
-
 Disclaimer - this is not official Red Hat documentation
 
+# Automatic Secrets Management with Helm in ArgoCD with Secrets Storage CSI Driver
 
 # Introduction
 
@@ -59,8 +59,7 @@ git clone https://github.com/CSA-RH/helm-gitops-sscsi_secrets.git
 https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gitops.html
 
 3. Install SSCSI in ARO
-    1. Install procedure
-        - I have installed the community version.
+    1. Install procedure (Following links describe how to install the community version.)
 
         - Red Hat Experts version
             > https://cloud.redhat.com/experts/misc/secrets-store-csi/
@@ -77,7 +76,7 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
             ```
 
         - create custom SCC
-            > This custom SCC is required to create the K8s secret and is allowing the use of the CSI volume. Additionally also set the capability "SETGID" as it is required by the MySQL DDBB Image used.
+            To allow usaging CSI volume and adding the capability "SETGID" (this capability as it is required by the MySQL DDBB Image).
 
             ```$bash
             oc apply -f clusterprimer/scc.yaml
@@ -250,22 +249,7 @@ oc label namespace ${NAMESPACE} argocd.argoproj.io/managed-by=openshift-gitops
 ```
 
 - Give authorization to the namespace to call the bitnami API Group 
-####Moved to Git#####
-```$bash
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: admin-sealedsecret
-  namespace: petclinic3
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: admin-sealedsecret
-subjects:
-- kind: ServiceAccount
-  name: openshift-gitops-argocd-application-controller
-  namespace: openshift-gitops
-
+> ####Moved to Git#####
 #oc adm policy add-role-to-user admin-sealedsecret system:serviceaccount:openshift-gitops:openshift-gitops-argocd-application-controller -n ${NAMESPACE}
 ```
 

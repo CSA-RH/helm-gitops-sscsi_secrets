@@ -1,5 +1,6 @@
 
-Disclaimer - this is not official Red Hat documentation
+# Disclaimer
+This repo contains an opinionated demo and is NOT an official Red Hat recommendation.
 
 # Automatic Secrets Management with Helm in ArgoCD with Secrets Storage CSI Driver
 
@@ -18,7 +19,7 @@ The objective of this repository is to demonstrate the usage of a Helm chart in 
 # Requirements
 - Azure KeyVault (azkv) service will be used as the container of the secrets to be mounted in the pods. 
 - SSCSI will retrieve the secrets from azkv and mount it in the pods. 
-- SSCSI will have to be authenticated against the azkv service, for that a service principal will be used. A SP will have a key that must be protected, therefore this repo uses Bitnamy Sealed Secrets to encript the SP key, which will allow the encrypted key to be added to a Git repository.
+- SSCSI will have to be authenticated against the azkv service, for that a service principal will be used. A SP will have a key that must be protected, therefore this repo uses Sealed Secrets to encript the SP key, which will allow the encrypted key to be added to a Git repository.
 - SSCSI by default mounts the retrived azkv secrets retrived as a volume in the pods, nonetheless we have an additional requirement to mount as a K8s secret as well (details bellow). 
 
 # Objects created Manualy
@@ -40,7 +41,7 @@ The objective of this repository is to demonstrate the usage of a Helm chart in 
 
 2. Install SSCSI in ARO
 
-3. Install Bitnami Sealed Secrets in ARO
+3. Install Sealed Secrets in ARO
 
 4. Exercise: Developer creates a new application in GitOps:
     1. Create the Azure Service Principal (SP)
@@ -88,9 +89,9 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
             oc apply -f clusterprimer/ClusterRole_scc.yaml 
             ```
 
-4. Install Bitnami Sealed Secrets in ARO
+4. Install Sealed Secrets in ARO
 
-    Bitnami Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.
+    Sealed Secrets team has developed a Helm Chart for installing the solution automatically. This automatism is customizable with multiple variables depending on the client requirements.
 
     It is important to bear in mind that The kubeseal utility uses asymmetric crypto to encrypt secrets that only the controller can decrypt. Please visit the following [link](https://github.com/bitnami-labs/sealed-secrets/blob/main/docs/developer/crypto.md) for more information about security protocols and cryptographic tools used.
 
@@ -132,7 +133,7 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
         sudo mv kubeseal /usr/local/bin/
         ```
 
-    - To authorize certain calls to the bitnami API Group from the projects. To configure the final namespace to host the respective *SealedSecret* objects and the respective ArgoCD application that handles the creation of the secret:
+    - To authorize certain calls to the bitnami sealed secrets API Group from the projects. To configure the final namespace to host the respective *SealedSecret* objects and the respective ArgoCD application that handles the creation of the secret:
 
         ```$bash
         oc apply -f clusterprimer/ClusterRole_namespaceauth.yaml
@@ -144,8 +145,7 @@ https://docs.openshift.com/gitops/1.10/installing_gitops/installing-openshift-gi
     For further details refer to: https://github.com/bitnami-labs/sealed-secrets#installation
 
 # Demo: Developer creates a new application in GitOps:
-
-## Export Enviremont variables in your local laptop
+## Export Enviremont variables to your local laptop
 
 ```$bash
 export KEYVAULT_RESOURCE_GROUP=lmartinh-rgb6
@@ -155,7 +155,7 @@ export NAMESPACE=petclinic3
 export SECRET_NAME=demosecret4
 export KEYVAULT_VALUE=petclinic
 
-#To allow access to Azure Key Vault 
+#Service Principal Key to access the Azure Key Vault 
 export AZK_SECRET_NAME=secrets-store-creds
 ```
 

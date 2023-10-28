@@ -1,8 +1,8 @@
 
+# Automatic Secrets Management with Helm in ArgoCD with Secrets Storage CSI Driver
+
 # Disclaimer
 This repo contains an opinionated demo and is NOT an official Red Hat recommendation.
-
-# Automatic Secrets Management with Helm in ArgoCD with Secrets Storage CSI Driver
 
 # Introduction
 

@@ -12,12 +12,14 @@ The objective of this repository is to demonstrate the usage of a Helm chart in 
 - GitOps/ArgoCD
 - Helm
 - SSCSI
+- Sealed Secrets
 - Azure KeyVault
 - K8s
 
 
 # Requirements
-- Azure KeyVault (azkv) service will be used as the container of the secrets to be mounted in the pods. 
+- Azure KeyVault (AZKV) service will be used as the container of the secrets to be mounted in the pods.
+- Sealed Secrets will encrypt the secret to authnticate with the AZKV.
 - SSCSI will retrieve the secrets from azkv and mount it in the pods. 
 - SSCSI will have to be authenticated against the azkv service, for that a service principal will be used. A SP will have a key that must be protected, therefore this repo uses Sealed Secrets to encript the SP key, which will allow the encrypted key to be added to a Git repository.
 - SSCSI by default mounts the retrived azkv secrets retrived as a volume in the pods, nonetheless we have an additional requirement to mount as a K8s secret as well (details bellow). 
